@@ -60,11 +60,11 @@ export const contexts = combineReducers({
 });
 
 /**
- * Como Criar um uso de contexto com ContextAPI
+ * How to Create Context Usage with Context API
  */
 const useContextAPI = (): ContextsProps => new ContextAPI(contexts).useContext();
 /**
- * Como criar um Provider ou Consumer que englobe toda a aplicação
+ * How to create a Provider or Consumer that encompasses the entire application
  */
 const Context = new ContextAPI();
 const Provider = Context.Provider;
