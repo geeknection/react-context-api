@@ -1,6 +1,9 @@
 # `@buuhv/react-context-api`
 
-JWT is a service class to your manage the sessions of your application
+Creating a Context API has never been easier than it is now.
+You no longer need to use Redux or Create a new structure for each project.
+Using react-context-api you can create your structure in seconds.
+Thanks to react-context-api you no longer need to declare a huge object for the return of your data from the reducer, react-context-api does it for you.
 
 
 ## Getting started
