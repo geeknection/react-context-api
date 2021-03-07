@@ -85,7 +85,9 @@ var ContextAPI = /** @class */ (function () {
          */
         this.reducer = function (state, action) {
             Object.keys(state).forEach(function (key) {
-                state[key] = ContextAPI.providerResult(state[key], action);
+                if (key === action.reducer) {
+                    state[key] = ContextAPI.providerResult(state[key], action);
+                }
             });
             return __assign({}, state);
         };

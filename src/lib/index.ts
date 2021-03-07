@@ -141,7 +141,9 @@ class ContextAPI {
      */
     public reducer = (state: any, action: ActionProvider) => {
         Object.keys(state).forEach(key => {
-            state[key] = ContextAPI.providerResult(state[key], action);
+            if (key === action.reducer) {
+                state[key] = ContextAPI.providerResult(state[key], action);
+            }
         });
         return {
             ...state
