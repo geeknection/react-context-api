@@ -16,13 +16,14 @@ Thanks to react-context-api you no longer need to declare a huge object for the 
 ```typescript
 import { UseReducer, ActionProvider } from "@buuhv/react-context-api";
 
-export interface SystemProvider extends UseReducer {
-    data: {
-        loading: boolean
-    }
+export interface SystemProvider {
+    logged: boolean
 }
 export interface ContextsProps {
     system: SystemProvider
+}
+export interface Store extends UseReducer {
+    store: ContextsProps
 }
 ```
 
@@ -34,10 +35,7 @@ import ContextAPI, { ActionProvider } from "@buuhv/react-context-api";
 import { SystemProvider } from "../interfaces";
 
 const initial = {
-    data: {
-        loading: false
-    },
-    dispatch: () => null
+    logged: false
 }
 
 const systemProvider = (state = initial, action?: ActionProvider ): SystemProvider => {
@@ -52,29 +50,31 @@ export default systemProvider;
 ## Creating Context API
 ```typescript
 import ContextAPI, { combineReducers } from "@buuhv/react-context-api";
-import systemProvider from "./providers/sytemProvider";
-import { ContextsProps } from "./interfaces";
+import systemProvider from "./providers/system";
+import userProvider from "./providers/user";
+import { Store } from "./interfaces";
 
-export const contexts = combineReducers({
-    system: systemProvider
+const reducers = combineReducers({
+    system: systemProvider,
+    user: userProvider
 });
+export const contextApi = new ContextAPI(reducers);
 
 /**
- * How to Create Context Usage with Context API
+ * How to create a useContext
  */
-const useContextAPI = (): ContextsProps => new ContextAPI(contexts).useContext();
+const useContextAPI = (): Store => contextApi.useContext();
 /**
- * How to create a Provider or Consumer that encompasses the entire application
+ * How to create Provider or Consumer
  */
-const Context = new ContextAPI();
-const Provider = Context.Provider;
-const Consumer = Context.Provider;
+const Provider = contextApi.Provider;
+const Consumer = contextApi.Consumer;
 
 export {
     Provider,
     Consumer,
     useContextAPI
-}
+};
 
 ```
 
@@ -82,25 +82,23 @@ export {
 
 ## Using
 ```typescript
-import React, { useEffect, useMemo } from 'react';
+import React, { useContext, useEffect, useMemo } from 'react';
 import {RouteComponentProps, withRouter} from 'react-router-dom';
-import { useContextAPI } from '#/reducers';
+import { contextApi, useContextAPI } from './reducers';//check your import path
 
 function HomeScreen(props: RouteComponentProps): JSX.Element {
-    const { system } = useContextAPI();
-    const { dispatch, data } = system;
+    const { store, dispatch } = useContextAPI();
     const handleTest = () => {
         dispatch({
-            type: 'loading',
-            data: !data.loading
+            type: 'name',
+            data: 'BuuhV',
+            reducer: 'user'
         });
-    }
-    useEffect(() => {
-        console.log(data.loading);
-    }, [data.loading]);
+      }
     return(
-        <div>
-            <button className='btn btn-primary' onClick={handleTest}>Test</button>
+        <div className='h-100 pt-5'>
+            {store.user.name}
+            <button className='btn btn-primary mt-5' onClick={handleTest}>Test</button>
         </div>
     );
 }

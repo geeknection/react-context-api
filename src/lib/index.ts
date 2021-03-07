@@ -1,56 +1,75 @@
 import {
     useReducer,
     Context,
-    createContext
+    createContext,
+    useContext
 } from "react";
 const React = require('react');
 
 export interface ActionProvider {
     type: string,
-    data: any
+    data: any,
+    reducer: string
 }
 
 export interface UseReducer {
-    data?: any,
+    store: any,
     dispatch: (action: ActionProvider) => void
 }
-
 /**
- * Simula um useReducer
+ * Carrega o valor do contexto
  * @param contexts 
  * @param key 
  * @returns Object
  */
-function PrivateUseReducer(contexts: any, key: any) {
-    const reducer = contexts[key];
-    const initialState = reducer();
-    const [state, dispatch] = useReducer(reducer, initialState);
-    let data: any = state;
-    if (data.hasOwnProperty('data')) data = data.data;
-    return {
-        data,
-        dispatch
+function executeReducer(reducer: any) {
+    try {
+        const initialState = reducer();
+        let data: any = initialState;
+        if (data.hasOwnProperty('data')) data = data.data;
+        return data;
+    } catch (error) {
+        return {}
     }
+}
+/**
+ * Unifica os reducers
+ * @param data 
+ * @returns object
+ */
+function uniqueReducer(data: any) {
+    let prev: any = {};
+    Object.keys(data).forEach(key => {
+        prev[key] = executeReducer(data[key]);
+    });
+    return prev;
 }
 /**
  * Simula um useContext
  * @param contexts 
- * @returns @returns Object
+ * @returns Object
  */
 function PrivateUseContext(contexts: any) {
-    let results: any = {};
-    Object.keys(contexts).forEach((key) => {
-        results[key] = PrivateUseReducer(contexts, key);
-    });
-    return results;
+    return useContext(contexts);
+}
+/**
+ * Simula um useReducer
+ * @param reducer 
+ * @param initialState 
+ * @returns Object
+ */
+function PrivateUseReducer(reducer: any, initialState: any) {
+    const [store, dispatch] = useReducer(reducer, initialState);
+    return {
+        store,
+        dispatch
+    }
 }
 
 class ContextAPI {
-    public ContextProviderConsumer: Context<{}> = createContext({});
-    private context = {};
+    public contexts: Context<{}> = createContext({});
     constructor(contexts = {}) {
-        this.ContextProviderConsumer = createContext(contexts);
-        this.context = contexts;
+        this.contexts = createContext(contexts);
     }
     /**
      * Utilizado para criar um Provider
@@ -58,24 +77,28 @@ class ContextAPI {
      * @example <Context.Provider value={}>...</Context.Provider>
      */
     public get Provider() {
-        return this.ContextProviderConsumer.Provider;
+        return this.contexts.Provider;
     }
     /**
      * Utilizado para criar um Consumer
      * @example const Context = new ContextAPI();
      * @example <Context.Consumer>...</Context.Consumer>
      */
-    public get Consumer() {
-        return this.ContextProviderConsumer.Consumer;
+    public get Consumer(): any {
+        return this.contexts.Consumer;
+    }
+    /**
+     * Pega os valores iniciais declarados na context api
+     */
+    public get initialState() {
+        return uniqueReducer(this.useContext());
     }
     /**
      * Retorna uma lista de providers
      * @returns Object
      */
     public useContext = (): any => {
-        const obj: any = this.context;
-        const contexted = PrivateUseContext(obj);
-        return contexted;
+        return PrivateUseContext(this.contexts);
     }
     /**
     * Permite a combinação de vários contextos. Semelhante ao combineReducers do redux
@@ -98,25 +121,38 @@ class ContextAPI {
     public static providerResult = (state: any, action?: ActionProvider) => {
         if (!action) return state;
         if (action.type === 'all') {
-            return {
-                ...state,
-                data: {
-                    ...action.data
-                }
-            };
+            return action.data;
         }
-        else if (state.data.hasOwnProperty(action.type)) {
+        else if (state.hasOwnProperty(action.type)) {
             return {
                 ...state,
-                data: {
-                    ...state.data,
-                    [action.type]: action.data
-                }
-            };
+                [action.type]: action.data
+            }
         }
         else {
             return state;
         }
+    }
+    /**
+     * Simula um reducer para o useReducer
+     * @param state 
+     * @param action 
+     * @returns 
+     */
+    public reducer = (state: any, action: ActionProvider) => {
+        Object.keys(state).forEach(key => {
+            state[key] = ContextAPI.providerResult(state[key], action);
+        });
+        return {
+            ...state
+        };
+    }
+    /**
+     * Retorna os objetos que serão utilizados no provider
+     * @returns Object
+     */
+    public get providerValues() {
+        return PrivateUseReducer(this.reducer, this.initialState);
     }
 }
 
