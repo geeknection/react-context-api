@@ -2,14 +2,14 @@ import { Context } from "react";
 export interface ActionProvider {
     type: string;
     data: any;
+    reducer: string;
 }
 export interface UseReducer {
-    data?: any;
+    store: any;
     dispatch: (action: ActionProvider) => void;
 }
 declare class ContextAPI {
-    ContextProviderConsumer: Context<{}>;
-    private context;
+    contexts: Context<{}>;
     constructor(contexts?: {});
     /**
      * Utilizado para criar um Provider
@@ -22,7 +22,11 @@ declare class ContextAPI {
      * @example const Context = new ContextAPI();
      * @example <Context.Consumer>...</Context.Consumer>
      */
-    get Consumer(): import("react").Consumer<{}>;
+    get Consumer(): any;
+    /**
+     * Pega os valores iniciais declarados na context api
+     */
+    get initialState(): any;
     /**
      * Retorna uma lista de providers
      * @returns Object
@@ -41,6 +45,21 @@ declare class ContextAPI {
      * @returns Object
      */
     static providerResult: (state: any, action?: ActionProvider) => any;
+    /**
+     * Simula um reducer para o useReducer
+     * @param state
+     * @param action
+     * @returns
+     */
+    reducer: (state: any, action: ActionProvider) => any;
+    /**
+     * Retorna os objetos que serão utilizados no provider
+     * @returns Object
+     */
+    get providerValues(): {
+        store: unknown;
+        dispatch: import("react").DispatchWithoutAction;
+    };
 }
 export default ContextAPI;
 declare const combineReducers: (slices: any) => any;

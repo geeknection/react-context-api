@@ -15,52 +15,81 @@ exports.combineReducers = void 0;
 var react_1 = require("react");
 var React = require('react');
 /**
- * Simula um useReducer
+ * Carrega o valor do contexto
  * @param contexts
  * @param key
  * @returns Object
  */
-function PrivateUseReducer(contexts, key) {
-    var reducer = contexts[key];
-    var initialState = reducer();
-    var _a = react_1.useReducer(reducer, initialState), state = _a[0], dispatch = _a[1];
-    var data = state;
-    if (data.hasOwnProperty('data'))
-        data = data.data;
-    return {
-        data: data,
-        dispatch: dispatch
-    };
+function executeReducer(reducer) {
+    try {
+        var initialState = reducer();
+        var data = initialState;
+        if (data.hasOwnProperty('data'))
+            data = data.data;
+        return data;
+    }
+    catch (error) {
+        return {};
+    }
+}
+/**
+ * Unifica os reducers
+ * @param data
+ * @returns object
+ */
+function uniqueReducer(data) {
+    var prev = {};
+    Object.keys(data).forEach(function (key) {
+        prev[key] = executeReducer(data[key]);
+    });
+    return prev;
 }
 /**
  * Simula um useContext
  * @param contexts
- * @returns @returns Object
+ * @returns Object
  */
 function PrivateUseContext(contexts) {
-    var results = {};
-    Object.keys(contexts).forEach(function (key) {
-        results[key] = PrivateUseReducer(contexts, key);
-    });
-    return results;
+    return react_1.useContext(contexts);
+}
+/**
+ * Simula um useReducer
+ * @param reducer
+ * @param initialState
+ * @returns Object
+ */
+function PrivateUseReducer(reducer, initialState) {
+    var _a = react_1.useReducer(reducer, initialState), store = _a[0], dispatch = _a[1];
+    return {
+        store: store,
+        dispatch: dispatch
+    };
 }
 var ContextAPI = /** @class */ (function () {
     function ContextAPI(contexts) {
         var _this = this;
         if (contexts === void 0) { contexts = {}; }
-        this.ContextProviderConsumer = react_1.createContext({});
-        this.context = {};
+        this.contexts = react_1.createContext({});
         /**
          * Retorna uma lista de providers
          * @returns Object
          */
         this.useContext = function () {
-            var obj = _this.context;
-            var contexted = PrivateUseContext(obj);
-            return contexted;
+            return PrivateUseContext(_this.contexts);
         };
-        this.ContextProviderConsumer = react_1.createContext(contexts);
-        this.context = contexts;
+        /**
+         * Simula um reducer para o useReducer
+         * @param state
+         * @param action
+         * @returns
+         */
+        this.reducer = function (state, action) {
+            Object.keys(state).forEach(function (key) {
+                state[key] = ContextAPI.providerResult(state[key], action);
+            });
+            return __assign({}, state);
+        };
+        this.contexts = react_1.createContext(contexts);
     }
     Object.defineProperty(ContextAPI.prototype, "Provider", {
         /**
@@ -69,7 +98,7 @@ var ContextAPI = /** @class */ (function () {
          * @example <Context.Provider value={}>...</Context.Provider>
          */
         get: function () {
-            return this.ContextProviderConsumer.Provider;
+            return this.contexts.Provider;
         },
         enumerable: false,
         configurable: true
@@ -81,7 +110,28 @@ var ContextAPI = /** @class */ (function () {
          * @example <Context.Consumer>...</Context.Consumer>
          */
         get: function () {
-            return this.ContextProviderConsumer.Consumer;
+            return this.contexts.Consumer;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(ContextAPI.prototype, "initialState", {
+        /**
+         * Pega os valores iniciais declarados na context api
+         */
+        get: function () {
+            return uniqueReducer(this.useContext());
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(ContextAPI.prototype, "providerValues", {
+        /**
+         * Retorna os objetos que serão utilizados no provider
+         * @returns Object
+         */
+        get: function () {
+            return PrivateUseReducer(this.reducer, this.initialState);
         },
         enumerable: false,
         configurable: true
@@ -109,10 +159,10 @@ var ContextAPI = /** @class */ (function () {
         if (!action)
             return state;
         if (action.type === 'all') {
-            return __assign(__assign({}, state), { data: __assign({}, action.data) });
+            return action.data;
         }
-        else if (state.data.hasOwnProperty(action.type)) {
-            return __assign(__assign({}, state), { data: __assign(__assign({}, state.data), (_a = {}, _a[action.type] = action.data, _a)) });
+        else if (state.hasOwnProperty(action.type)) {
+            return __assign(__assign({}, state), (_a = {}, _a[action.type] = action.data, _a));
         }
         else {
             return state;
